@@ -55,9 +55,12 @@ interface LibraryContextType {
   // CRUD Anggota
   addAnggota: (data: Omit<AnggotaItem, 'id'>) => void;
   addMultipleAnggota: (list: Omit<AnggotaItem, 'id'>[]) => void;
+  setAllAnggota: (list: AnggotaItem[]) => void;
   updateAnggota: (id: string, data: Partial<AnggotaItem>) => void;
   updateMultipleAnggotaKelas: (ids: string[], newKelasId: string) => void;
   deleteAnggota: (id: string) => { success: boolean; message?: string };
+  clearAllAnggota: () => void;
+  clearAnggotaByKelas: (kelasId: string) => void;
 
   // Transaksi
   addTransaksi: (data: {
@@ -199,6 +202,14 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const [anggota, setAnggota] = useState<AnggotaItem[]>(() => {
     try {
+      // User explicitly requested to empty student & member data so they can input/sync it themselves
+      const hasAppliedUserClear = localStorage.getItem('smpn3_anggota_cleared_user_v2');
+      if (!hasAppliedUserClear) {
+        localStorage.setItem('smpn3_anggota_cleared_user_v2', 'true');
+        localStorage.setItem(STORAGE_KEYS.ANGGOTA, JSON.stringify([]));
+        return [];
+      }
+
       const saved = localStorage.getItem(STORAGE_KEYS.ANGGOTA);
       if (saved) {
         let parsed: AnggotaItem[] = JSON.parse(saved);
@@ -213,21 +224,11 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
           if (a.kelasId === 'k-9b' || a.kelasId === 'IX-B') return { ...a, kelasId: 'k-92' };
           return a;
         });
-
-        // Check if roster for VII.1 exists
-        const count71 = parsed.filter((a) => a.kelasId === 'k-71').length;
-        if (count71 < 25) {
-          const students71 = initialAnggota.filter((a) => a.kelasId === 'k-71');
-          const non71 = parsed.filter(
-            (a) => a.kelasId !== 'k-71' && a.id !== 'ang-01' && a.id !== 'ang-02'
-          );
-          return [...students71, ...non71];
-        }
         return parsed;
       }
-      return initialAnggota;
+      return [];
     } catch {
-      return initialAnggota;
+      return [];
     }
   });
 
@@ -431,6 +432,29 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setAnggota((prev) => prev.filter((a) => a.id !== id));
     addToast('Data anggota berhasil dihapus.', 'info');
     return { success: true };
+  };
+
+  const setAllAnggota = (list: AnggotaItem[]) => {
+    setAnggota(list);
+    localStorage.setItem(STORAGE_KEYS.ANGGOTA, JSON.stringify(list));
+    localStorage.setItem('smpn3_anggota_cleared_user_v2', 'true');
+  };
+
+  const clearAllAnggota = () => {
+    setAnggota([]);
+    localStorage.setItem(STORAGE_KEYS.ANGGOTA, JSON.stringify([]));
+    localStorage.setItem('smpn3_anggota_cleared_user_v2', 'true');
+    addToast('Seluruh data anggota perpustakaan telah dikosongkan.', 'info');
+  };
+
+  const clearAnggotaByKelas = (kelasId: string) => {
+    setAnggota((prev) => {
+      const remaining = prev.filter((a) => a.kelasId !== kelasId);
+      localStorage.setItem(STORAGE_KEYS.ANGGOTA, JSON.stringify(remaining));
+      return remaining;
+    });
+    const k = getKelasById(kelasId);
+    addToast(`Data anggota untuk ${k ? k.namaKelas : 'kelas terpilih'} berhasil dikosongkan.`, 'info');
   };
 
   // Transaksi
@@ -664,9 +688,12 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         deleteBuku,
         addAnggota,
         addMultipleAnggota,
+        setAllAnggota,
         updateAnggota,
         updateMultipleAnggotaKelas,
         deleteAnggota,
+        clearAllAnggota,
+        clearAnggotaByKelas,
         addTransaksi,
         kembalikanBuku,
         updateTransaksi,

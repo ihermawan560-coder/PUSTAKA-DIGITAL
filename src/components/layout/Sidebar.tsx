@@ -14,7 +14,8 @@ import {
   X,
   ChevronRight,
   Sparkles,
-  Layers
+  Layers,
+  Cloud
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -116,6 +117,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       ],
     },
     {
+      title: 'Integrasi Cloud & Sheets',
+      items: [
+        {
+          id: 'google-sheets',
+          label: 'Google Sheets & Drive',
+          icon: Cloud,
+          badge: null,
+          badgeColor: 'bg-emerald-100 text-emerald-800',
+        },
+      ],
+    },
+    {
       title: 'Pengaturan Sistem',
       items: [
         {
@@ -127,6 +140,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       ],
     },
   ];
+
 
   const handleSelectTab = (tab: ActiveTab) => {
     setActiveTab(tab);

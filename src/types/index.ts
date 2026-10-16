@@ -123,4 +123,6 @@ export type ActiveTab =
   | 'kartu-anggota'
   | 'riwayat'
   | 'laporan'
-  | 'pengaturan';
+  | 'pengaturan'
+  | 'google-sheets';
+

@@ -16,6 +16,7 @@ import { KartuAnggotaView } from './components/kartu/KartuAnggotaView';
 import { RiwayatAnggotaView } from './components/riwayat/RiwayatAnggotaView';
 import { LaporanView } from './components/laporan/LaporanView';
 import { PengaturanView } from './components/pengaturan/PengaturanView';
+import { GoogleSheetsView } from './components/sheets/GoogleSheetsView';
 
 const MainLayout: React.FC = () => {
   const { user, activeTab } = useLibrary();
@@ -54,10 +55,13 @@ const MainLayout: React.FC = () => {
         return <LaporanView />;
       case 'pengaturan':
         return <PengaturanView />;
+      case 'google-sheets':
+        return <GoogleSheetsView />;
       default:
         return <DashboardView />;
     }
   };
+
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">

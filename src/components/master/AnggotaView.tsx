@@ -33,7 +33,8 @@ import {
   FileUp,
   FileCheck,
   AlertTriangle,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Cloud
 } from 'lucide-react';
 import { Modal, ConfirmModal } from '../common/Modal';
 
@@ -124,6 +125,7 @@ export const AnggotaView: React.FC = () => {
     updateAnggota,
     updateMultipleAnggotaKelas,
     deleteAnggota,
+    clearAllAnggota,
     setActiveTab,
     getKelasById,
     addToast,
@@ -137,6 +139,8 @@ export const AnggotaView: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<'abjad-asc' | 'abjad-desc' | 'nomor-asc' | 'terbaru'>('abjad-asc');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [isConfirmClearOpen, setIsConfirmClearOpen] = useState<boolean>(false);
+
 
   // Multi-select for batch actions (e.g. Ganti Kelas Siswa Terpilih)
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -692,6 +696,16 @@ export const AnggotaView: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* Google Sheets Sync Hub Button */}
+          <button
+            onClick={() => setActiveTab('google-sheets')}
+            className="px-3.5 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold shadow-md shadow-teal-700/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+            title="Sinkronkan & Kelola dengan Google Sheets & Drive"
+          >
+            <Cloud className="w-4 h-4 text-teal-200" />
+            <span>Google Sheets</span>
+          </button>
+
           {/* Primary CSV Upload Button */}
           <button
             onClick={() => {
@@ -700,7 +714,7 @@ export const AnggotaView: React.FC = () => {
               setImportTab('csv');
               setIsImportModalOpen(true);
             }}
-            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2"
+            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Unggah Berkas CSV</span>
@@ -714,7 +728,7 @@ export const AnggotaView: React.FC = () => {
               setImportTab('paste');
               setIsImportModalOpen(true);
             }}
-            className="px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
+            className="px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
           >
             <ClipboardList className="w-4 h-4" />
             <span>Tempel Teks</span>
@@ -723,10 +737,21 @@ export const AnggotaView: React.FC = () => {
           {/* Single Add Button */}
           <button
             onClick={handleOpenAdd}
-            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
+            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>Tambah Anggota Baru</span>
+          </button>
+
+          {/* Clear Members Button */}
+          <button
+            onClick={() => setIsConfirmClearOpen(true)}
+            disabled={anggota.length === 0}
+            className="px-3 py-2.5 rounded-xl border border-red-300 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Kosongkan seluruh data anggota"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Kosongkan Data</span>
           </button>
         </div>
       </div>
@@ -1104,8 +1129,50 @@ export const AnggotaView: React.FC = () => {
               <tbody className="divide-y divide-slate-100 text-slate-800">
                 {filteredAnggota.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="py-8 text-center text-slate-400">
-                      Tidak ada data anggota yang cocok dengan filter.
+                    <td colSpan={10} className="py-10 px-4 text-center">
+                      <div className="max-w-md mx-auto space-y-3">
+                        <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+                          <Users className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-800">
+                            {anggota.length === 0 ? 'Data Anggota Saat Ini Kosong' : 'Tidak ada siswa yang cocok dengan filter'}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {anggota.length === 0
+                              ? 'Data telah dikosongkan agar Anda dapat menginput sendiri atau mengimpor data siswa baru.'
+                              : 'Coba ubah kata kunci pencarian atau ganti filter kelas di atas.'}
+                          </p>
+                        </div>
+                        {anggota.length === 0 && (
+                          <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                            <button
+                              onClick={handleOpenAdd}
+                              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                            >
+                              <Plus className="w-4 h-4" />
+                              <span>Input Siswa Manual</span>
+                            </button>
+                            <button
+                              onClick={() => setActiveTab('google-sheets')}
+                              className="px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                            >
+                              <Cloud className="w-4 h-4" />
+                              <span>Buka Google Sheets & Sync</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setIsImportModalOpen(true);
+                                setImportTab('csv');
+                              }}
+                              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                            >
+                              <FileSpreadsheet className="w-4 h-4" />
+                              <span>Upload File CSV</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -1231,8 +1298,48 @@ export const AnggotaView: React.FC = () => {
         /* Members Grid View */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredAnggota.length === 0 ? (
-            <div className="col-span-full bg-white p-8 rounded-2xl border border-slate-200 text-center text-slate-400">
-              Tidak ada data anggota yang ditemukan.
+            <div className="col-span-full bg-white p-10 rounded-2xl border border-slate-200 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+                <Users className="w-6 h-6" />
+              </div>
+              <div className="max-w-md mx-auto space-y-1">
+                <p className="text-sm font-bold text-slate-800">
+                  {anggota.length === 0 ? 'Data Anggota Saat Ini Kosong' : 'Tidak ada anggota yang cocok dengan filter'}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {anggota.length === 0
+                    ? 'Data telah dikosongkan agar Anda dapat menginput sendiri atau mengimpor data siswa baru.'
+                    : 'Coba ubah kata kunci pencarian atau ganti filter kelas di bagian atas.'}
+                </p>
+              </div>
+              {anggota.length === 0 && (
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                  <button
+                    onClick={handleOpenAdd}
+                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Input Siswa Manual</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('google-sheets')}
+                    className="px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Cloud className="w-4 h-4" />
+                    <span>Buka Google Sheets & Sync</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsImportModalOpen(true);
+                      setImportTab('csv');
+                    }}
+                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    <span>Upload File CSV</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             filteredAnggota.map((item, idx) => {
@@ -1972,6 +2079,21 @@ export const AnggotaView: React.FC = () => {
         onConfirm={handleDeleteConfirm}
         title="Konfirmasi Hapus Anggota"
         message="Apakah Anda yakin ingin menghapus data anggota ini? Anggota yang masih memiliki peminjaman aktif tidak dapat dihapus."
+      />
+
+      {/* Kosongkan Semua Data Anggota Confirmation */}
+      <ConfirmModal
+        isOpen={isConfirmClearOpen}
+        onClose={() => setIsConfirmClearOpen(false)}
+        onConfirm={() => {
+          clearAllAnggota();
+          setIsConfirmClearOpen(false);
+        }}
+        title="Kosongkan Seluruh Data Anggota"
+        message={`Apakah Anda yakin ingin mengosongkan semua data siswa dan anggota (${anggota.length} orang)? Setelah dikosongkan, Anda dapat menginput data siswa dari awal secara manual, mengimpor dari Google Sheets, atau mengunggah berkas CSV.`}
+        confirmText="Ya, Kosongkan Sekarang"
+        cancelText="Batal"
+        isDanger={true}
       />
     </div>
   );
